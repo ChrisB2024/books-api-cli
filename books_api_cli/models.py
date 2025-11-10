@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from sqlmodel import Field, SQLModel
 
@@ -26,3 +26,26 @@ class BookCreate(BookBase):
 # Model for reading book data
 class BookRead(BookBase):
     id: int
+
+
+# Model for updating existing books (all fields optional)
+class BookUpdate(SQLModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    author: Optional[str] = Field(None, min_length=1, max_length=100)
+    year: Optional[int] = Field(None, ge=0)
+    price: Optional[float] = Field(None, ge=0)
+
+
+# Error response models
+class ErrorResponse(SQLModel):
+    """Standard error response model."""
+
+    detail: str
+    error_type: str = "error"
+
+
+class ValidationErrorResponse(SQLModel):
+    """Validation error response model."""
+
+    detail: List[dict]
+    error_type: str = "validation_error"

@@ -214,3 +214,103 @@ class TestBooksAPI:
         }
         response = client.post("/books/", json=invalid_book)
         assert response.status_code == 422
+
+    def test_update_book_with_invalid_year(self, client: TestClient):
+        """Test creating a book with invalid year (future)."""
+        invalid_book = {
+            "title": "Future Book",
+            "author": "Futurist",
+            "year": 3000,  # Too far in the future
+            "price": 19.99,
+        }
+        response = client.post("/books/", json=invalid_book)
+        assert response.status_code == 422
+
+    def test_create_book_with_negative_price(self, client: TestClient):
+        """Test creating a book with negative price."""
+        invalid_book = {
+            "title": "Free Book",
+            "author": "Dumb author",
+            "year": 2024,
+            "price": -3.00,  # Negative price
+        }
+        response = client.post("/books/", json=invalid_book)
+        assert response.status_code == 422
+
+    def test_create_book_with_empty_title(self, client: TestClient):
+        """Test creating a book with an empty title."""
+        invalid_book = {
+            "title": "",
+            "author": "Valid Author",
+            "year": 2024,
+            "price": 19.99,
+        }
+        response = client.post("/books/", json=invalid_book)
+        assert response.status_code == 422
+
+    def test_create_book_with_no_price(self, client: TestClient):
+        """Test creating a book with no price."""
+        invalid_book = {
+            "title": "Priceless Book",
+            "author": "Generous Author",
+            "year": 2024,
+            "price": None,
+        }
+        response = client.post("/books/", json=invalid_book)
+        assert response.status_code == 422
+
+    def test_update_partial_fields(self, client: TestClient):
+        """Test updating only some fields of a book."""
+        # Create a book
+        create_response = client.post("/books/", json=sample_book)
+        book_id = create_response.json()["id"]
+
+        # Update only the price
+        response = client.put(f"/books/{book_id}", json={"price": 29.99})
+        assert response.status_code == 200
+        data = response.json()
+        assert data["price"] == 29.99
+        assert data["title"] == sample_book["title"]  # Unchanged
+
+    def test_search_case_insensitive(self, client: TestClient):
+        """Test that search is case insensitive."""
+        # Create a book
+        client.post(
+            "/books/",
+            json={
+                "title": "Python Programming",
+                "author": "John Doe",
+                "year": 2023,
+                "price": 29.99,
+            },
+        )
+
+        # Search with lowercase
+        response = client.get("/books/?q=python")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) >= 1
+
+    def test_pagination_edge_cases(self, client: TestClient):
+        """Test pagination with edge cases."""
+        # Create 3 books
+        for i in range(3):
+            client.post(
+                "/books/",
+                json={
+                    "title": f"Book {i}",
+                    "author": "Author",
+                    "year": 2024,
+                    "price": 10.0,
+                },
+            )
+
+        # Test offset beyond available books
+        response = client.get("/books/?offset=100")
+        assert response.status_code == 200
+        assert response.json() == []
+
+        # Test limit of 0
+        response = client.get("/books/?limit=0")
+        assert response.status_code == 200
+        assert len(response.json()) == 0

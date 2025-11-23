@@ -10,6 +10,19 @@ from rich.table import Table
 # Load environment variables
 load_dotenv()
 
+# Get API key from environment
+API_KEY = os.getenv("API_KEY", "")
+
+
+# Helper function to get headers
+def get_headers():
+    """Get headers with API key if configured."""
+    headers = {"Content-Type": "application/json"}
+    if API_KEY:
+        headers["X-API-Key"] = API_KEY
+    return headers
+
+
 # Get API base URL from environment
 API_BASE_URL = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
 
@@ -42,7 +55,11 @@ def create(
         }
 
         # Make POST request to API
-        response = httpx.post(f"{API_BASE_URL}/books/", json=book_data)
+        response = httpx.post(
+            f"{API_BASE_URL}/books/",
+            json=book_data,
+            headers=get_headers(),
+        )
         response.raise_for_status()
 
         # Get the created book
@@ -179,7 +196,11 @@ def update(
 
         # Make PUT request to API
         url = f"{API_BASE_URL}/books/{book_id}"
-        response = httpx.put(url, json=update_data)
+        response = httpx.put(
+            url,
+            json=update_data,
+            headers=get_headers(),
+        )
         response.raise_for_status()
 
         # Get the updated book
@@ -220,7 +241,10 @@ def delete(
                 raise typer.Exit(code=0)
 
         # Make DELETE request to API
-        response = httpx.delete(f"{API_BASE_URL}/books/{book_id}")
+        response = httpx.delete(
+            f"{API_BASE_URL}/books/{book_id}",
+            headers=get_headers(),
+        )
         response.raise_for_status()
 
         # Display success message
